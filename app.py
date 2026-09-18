@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 from datetime import datetime
+=======
+﻿from datetime import datetime
+>>>>>>> Stashed changes
 import os
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request
