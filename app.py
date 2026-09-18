@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
 from datetime import datetime
-=======
-﻿from datetime import datetime
->>>>>>> Stashed changes
 import os
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request
@@ -21,8 +17,8 @@ WHATSAPP_API_URL = os.getenv(
 PHONE_NUMBER_ID = os.getenv('PHONE_NUMBER_ID', '')
 WABA_ID = os.getenv('WABA_ID', '')
 ACCESS_TOKEN = os.getenv('ACCESS_TOKEN', '')
-VERIFY_TOKEN = os.getenv('VERIFY_TOKEN', 'ahmadnadeem804')
-EXCEL_FILE_NAME = os.getenv('EXCEL_FILE_NAME', 'CoreCart_Orders.xlsx')
+VERIFY_TOKEN = os.getenv('VERIFY_TOKEN', '3feb2020@')
+EXCEL_FILE_NAME = os.getenv('EXCEL_FILE_NAME', 'corecart_orders.xlsx')
 
 # --- GOOGLE SHEETS SETUP VIA GSPREAD ---
 scope = [
@@ -75,13 +71,11 @@ def check_order_exists(order_id: str) -> bool:
 def update_google_sheet(phone_number: str, order_id: str, status: str):
   current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   try:
-    # Status ke mutabiq sahi tab select karo
     if status == 'Cancelled':
       worksheet = sheet_obj.worksheet('Cancelled Orders')
     else:
       worksheet = sheet_obj.worksheet('Confirmed Orders')
 
-    # Row append kar do sheet mein: [order_id, phone_number, status, timestamp]
     worksheet.append_row(
         [str(order_id), str(phone_number), str(status), str(current_time)]
     )
