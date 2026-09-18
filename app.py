@@ -1,4 +1,4 @@
-﻿import os
+import os
 import requests
 from datetime import datetime
 from flask import Flask, request, jsonify
@@ -14,7 +14,8 @@ WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://graph.facebook.com/v25
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID", "")
 WABA_ID = os.getenv("WABA_ID", "")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN", "")
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "")
+# Yahan humne fallback token bhi de diya hai taake agar .env mein na ho toh error na aaye
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "ahmadnadeem804")
 EXCEL_FILE_NAME = os.getenv("EXCEL_FILE_NAME", "CoreCart_Orders.xlsx")
 GOOGLE_SHEET_WEB_APP_URL = os.getenv("GOOGLE_SHEET_WEB_APP_URL", "")
 
@@ -306,7 +307,7 @@ def handle_shopify_order():
         
     return jsonify({"status": "received"}), 200
 
-# --- 8. META WEBHOOK ROUTE ---
+# --- 8. META WEBHOOK ROUTE (Updated & Secured) ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def whatsapp_webhook():
     if request.method == 'GET':
@@ -314,11 +315,14 @@ def whatsapp_webhook():
         token = request.args.get("hub.verify_token")
         challenge = request.args.get("hub.challenge")
         
+        print(f"[WEBHOOK GET] Mode: {mode}, Token Received: {token}")
+        
         if mode and token:
             if mode == "subscribe" and token == VERIFY_TOKEN:
-                print("[VERIFY SUCCESS] Tokens matched!")
+                print("[VERIFY SUCCESS] Tokens matched perfectly!")
                 return challenge, 200
             else:
+                print(f"[VERIFY FAILED] Expected '{VERIFY_TOKEN}', got '{token}'")
                 return "Verification failed: Token mismatch", 403
         return "Verification failed: Missing parameters", 400
 
