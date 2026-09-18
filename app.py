@@ -12,8 +12,10 @@ app = Flask(__name__)
 # --- CONFIGURATION FROM ENVIRONMENT VARIABLES ---
 WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://graph.facebook.com/v25.0")
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID", "")
+WABA_ID = os.getenv("WABA_ID", "")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN", "")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "")
+EXCEL_FILE_NAME = os.getenv("EXCEL_FILE_NAME", "CoreCart_Orders.xlsx")
 GOOGLE_SHEET_WEB_APP_URL = os.getenv("GOOGLE_SHEET_WEB_APP_URL", "")
 
 # --- 1. AUTOMATIC PHONE NUMBER FORMATTING (E.164 Standard) ---
@@ -70,7 +72,7 @@ def send_order_confirmation_button(phone_number: str, customer_name: str, order_
         "to": phone_number,
         "type": "template",
         "template": {
-            "name": "confirmation_message_templete",
+            "name": "confirmation",  # Meta template ka exact naam
             "language": {"code": "en"},
             "components": [
                 {
@@ -102,7 +104,7 @@ def send_success_reply_template(phone_number: str, customer_name: str, order_id:
         "to": phone_number,
         "type": "template",
         "template": {
-            "name": "corecart_success_reply",
+            "name": "confirm",
             "language": {"code": "en"},
             "components": [
                 {
@@ -120,6 +122,8 @@ def send_success_reply_template(phone_number: str, customer_name: str, order_id:
         response.raise_for_status()
     except Exception as e:
         print(f"[WHATSAPP ERROR] Failed to send success reply: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[META ERROR DETAILS]: {e.response.text}")
 
 def send_cancel_reply_template(phone_number: str, customer_name: str, order_id: str):
     endpoint = f"{WHATSAPP_API_URL}/{PHONE_NUMBER_ID}/messages"
@@ -129,7 +133,7 @@ def send_cancel_reply_template(phone_number: str, customer_name: str, order_id: 
         "to": phone_number,
         "type": "template",
         "template": {
-            "name": "corecart_cancel_reply",
+            "name": "cancel",
             "language": {"code": "en"},
             "components": [
                 {
@@ -147,6 +151,57 @@ def send_cancel_reply_template(phone_number: str, customer_name: str, order_id: 
         response.raise_for_status()
     except Exception as e:
         print(f"[WHATSAPP ERROR] Failed to send cancel reply: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[META ERROR DETAILS]: {e.response.text}")
+
+def send_order_dispatch_template(phone_number: str, customer_name: str, order_id: str, amount: str, tracking_number: str, courier_name: str, tracking_url: str = ""):
+    endpoint = f"{WHATSAPP_API_URL}/{PHONE_NUMBER_ID}/messages"
+    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
+    
+    body_parameters = [
+        {"type": "text", "text": customer_name},    # {{1}}
+        {"type": "text", "text": order_id},        # {{2}}
+        {"type": "text", "text": amount},          # {{3}}
+        {"type": "text", "text": tracking_number}, # {{4}}
+        {"type": "text", "text": courier_name}     # {{5}}
+    ]
+    
+    components = [
+        {
+            "type": "body",
+            "parameters": body_parameters
+        }
+    ]
+    
+    if tracking_url:
+        components.append({
+            "type": "button",
+            "sub_type": "url",
+            "index": "0",
+            "parameters": [
+                {"type": "text", "text": tracking_url}
+            ]
+        })
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": phone_number,
+        "type": "template",
+        "template": {
+            "name": "dispatch",
+            "language": {"code": "en"},
+            "components": components
+        }
+    }
+    
+    try:
+        response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        print(f"[WHATSAPP SUCCESS] Order Dispatch template sent to {phone_number}")
+    except Exception as e:
+        print(f"[WHATSAPP ERROR] Failed to send dispatch message: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[META ERROR DETAILS]: {e.response.text}")
 
 def send_delivery_feedback_template(phone_number: str, customer_name: str, order_id: str):
     endpoint = f"{WHATSAPP_API_URL}/{PHONE_NUMBER_ID}/messages"
@@ -156,7 +211,7 @@ def send_delivery_feedback_template(phone_number: str, customer_name: str, order
         "to": phone_number,
         "type": "template",
         "template": {
-            "name": "corecart_delivery_feedback",
+            "name": "feedback",
             "language": {"code": "en"},
             "components": [
                 {
@@ -175,6 +230,8 @@ def send_delivery_feedback_template(phone_number: str, customer_name: str, order
         print(f"[WHATSAPP SUCCESS] Feedback template sent to {phone_number}")
     except Exception as e:
         print(f"[WHATSAPP ERROR] Failed to send feedback message: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[META ERROR DETAILS]: {e.response.text}")
 
 # --- 5. INVALID TEXT MESSAGE HANDLER ---
 def send_guidance_message(phone_number: str):
@@ -194,10 +251,39 @@ def send_guidance_message(phone_number: str):
     except Exception as e:
         print(f"[ERROR] Failed to send guidance text: {e}")
 
-# --- 6. SHOPIFY WEBHOOK ROUTE ---
+# --- 6. MANUAL BROWSER TEST ROUTE ---
+@app.route('/test-manual-order', methods=['GET'])
+def test_manual_order():
+    raw_phone = request.args.get('phone') or '923276878958'
+    phone_number = format_phone_number(raw_phone)
+    
+    customer_name = request.args.get('name', 'Muhammad Bilawal')
+    order_id = request.args.get('order_id', 'Z-1001')
+    total_amount = request.args.get('total', '2999')
+    
+    if not phone_number:
+        return jsonify({"status": "error", "message": "Phone number is invalid or missing."}), 400
+        
+    try:
+        send_order_confirmation_button(phone_number, customer_name, order_id, total_amount)
+        update_google_sheet(phone_number, order_id, "Pending Test")
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Manual test order triggered successfully for {phone_number}",
+            "order_id": order_id
+        }), 200
+    except Exception as e:
+        print(f"[TEST ROUTE ERROR] {e}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+# --- 7. SHOPIFY WEBHOOK ROUTE ---
 @app.route('/shopify-order', methods=['POST'])
 def handle_shopify_order():
     order_data = request.get_json()
+    if not order_data:
+        return jsonify({"status": "error", "message": "No JSON payload received"}), 400
+        
     try:
         customer_name = order_data.get('customer', {}).get('first_name', 'Valued Customer')
         raw_phone = order_data.get('shipping_address', {}).get('phone') or order_data.get('customer', {}).get('phone', '')
@@ -211,6 +297,7 @@ def handle_shopify_order():
                 print(f"[DUPLICATE BLOCKED] Order {order_id} is already processed. Skipping message.")
             else:
                 send_order_confirmation_button(phone_number, customer_name, order_id, total_price)
+                update_google_sheet(phone_number, order_id, "Pending Shopify")
         else:
             print("[WARNING] Phone number missing in Shopify order payload.")
             
@@ -219,7 +306,7 @@ def handle_shopify_order():
         
     return jsonify({"status": "received"}), 200
 
-# --- 7. META WEBHOOK ROUTE ---
+# --- 8. META WEBHOOK ROUTE ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def whatsapp_webhook():
     if request.method == 'GET':
@@ -236,6 +323,8 @@ def whatsapp_webhook():
         return "Verification failed: Missing parameters", 400
 
     data = request.get_json()
+    if not data:
+        return jsonify({"status": "success"}), 200
     
     try:
         entries = data.get('entry', [])
@@ -258,16 +347,14 @@ def whatsapp_webhook():
                         
                         if reply_id.startswith("confirm_"):
                             order_id = reply_id.replace("confirm_", "")
-                            if not check_order_exists(order_id):
-                                update_google_sheet(sender_phone, order_id, "Confirmed")
-                                send_success_reply_template(sender_phone, customer_name, order_id)
-                            
+                            update_google_sheet(sender_phone, order_id, "Confirmed")
+                            send_success_reply_template(sender_phone, customer_name, order_id)
+                        
                         elif reply_id.startswith("cancel_"):
                             order_id = reply_id.replace("cancel_", "")
-                            if not check_order_exists(order_id):
-                                update_google_sheet(sender_phone, order_id, "Cancelled")
-                                send_cancel_reply_template(sender_phone, customer_name, order_id)
-                                
+                            update_google_sheet(sender_phone, order_id, "Cancelled")
+                            send_cancel_reply_template(sender_phone, customer_name, order_id)
+                    
                     elif msg_type == 'text':
                         print(f"[TEXT RECEIVED] Non-button text from {sender_phone}")
                         send_guidance_message(sender_phone)
