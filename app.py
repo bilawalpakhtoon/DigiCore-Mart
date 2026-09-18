@@ -53,9 +53,14 @@ def update_google_sheet(phone_number: str, order_id: str, status: str):
     
     try:
         response = requests.post(GOOGLE_SHEET_WEB_APP_URL, json=payload, timeout=10)
+        print(f"[GOOGLE SHEET RESPONSE STATUS]: {response.status_code}")
+        print(f"[GOOGLE SHEET RESPONSE TEXT]: {response.text}")
+        response.raise_for_status()
         print(f"[GOOGLE SHEET SUCCESS] Order {order_id} recorded as '{status}'.")
     except Exception as e:
         print(f"[GOOGLE SHEET ERROR] Failed to update Google Sheet: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[GOOGLE SHEET ERROR DETAILS]: {e.response.text}")
 
 # --- 4. WHATSAPP TEMPLATE SENDER FUNCTIONS ---
 def send_order_confirmation_button(phone_number: str, customer_name: str, order_id: str, total_amount: str):
@@ -362,7 +367,7 @@ def whatsapp_webhook():
 
     data = request.get_json()
     if not data:
-        return jsonify({"status": "success"}), 200
+        return jsonify({"status": "success"}}, 200
     
     try:
         entries = data.get('entry', [])
