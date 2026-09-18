@@ -154,7 +154,7 @@ def send_cancel_reply_template(phone_number: str, customer_name: str, order_id: 
         if hasattr(e, 'response') and e.response is not None:
             print(f"[META ERROR DETAILS]: {e.response.text}")
 
-def send_order_dispatch_template(phone_number: str, customer_name: str, order_id: str, amount: str, tracking_number: str, courier_name: str, tracking_url: str = ""):
+def send_order_dispatch_template(phone_number: str, customer_name: str, order_id: str, amount: str, tracking_number: str, courier_name: str):
     endpoint = f"{WHATSAPP_API_URL}/{PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
     
@@ -166,23 +166,6 @@ def send_order_dispatch_template(phone_number: str, customer_name: str, order_id
         {"type": "text", "text": courier_name}     # {{5}}
     ]
     
-    components = [
-        {
-            "type": "body",
-            "parameters": body_parameters
-        }
-    ]
-    
-    if tracking_url:
-        components.append({
-            "type": "button",
-            "sub_type": "url",
-            "index": "0",
-            "parameters": [
-                {"type": "text", "text": tracking_url}
-            ]
-        })
-
     payload = {
         "messaging_product": "whatsapp",
         "to": phone_number,
@@ -190,7 +173,12 @@ def send_order_dispatch_template(phone_number: str, customer_name: str, order_id
         "template": {
             "name": "dispatch",
             "language": {"code": "en"},
-            "components": components
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": body_parameters
+                }
+            ]
         }
     }
     
@@ -300,13 +288,12 @@ def test_dispatch():
     phone = format_phone_number(request.args.get('phone', '923276878958'))
     name = request.args.get('name', 'Bilawal')
     order_id = request.args.get('order_id', 'Z-1001')
-    amount = request.args.get('amount', '2999')
-    tracking = request.args.get('tracking', 'TCS-998877')
-    courier = request.args.get('courier', 'TCS Courier')
-    tracking_url = request.args.get('url', 'https://tcs.com.pk')
+    amount = request.args.get('amount', '2500')
+    tracking = request.args.get('tracking', '142334252345234')
+    courier = request.args.get('courier', 'PostEx')
     
     try:
-        send_order_dispatch_template(phone, name, order_id, amount, tracking, courier, tracking_url)
+        send_order_dispatch_template(phone, name, order_id, amount, tracking, courier)
         update_google_sheet(phone, order_id, "Dispatched")
         return jsonify({"status": "success", "message": "Dispatch template test sent!", "order_id": order_id}), 200
     except Exception as e:
