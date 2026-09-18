@@ -12,6 +12,18 @@ load_dotenv('client.env')
 
 app = Flask(__name__)
 
+
+# --- ROOT & PING ROUTES FOR CRON-JOB ---
+@app.route('/')
+def home():
+  return 'CoreCart WhatsApp Bot is running successfully!'
+
+
+@app.route('/ping')
+def ping():
+  return 'Server is alive!', 200
+
+
 # --- CONFIGURATION FROM ENVIRONMENT VARIABLES ---
 WHATSAPP_API_URL = os.getenv(
     'WHATSAPP_API_URL', 'https://graph.facebook.com/v25.0'
@@ -35,7 +47,7 @@ creds_dict = {
     'private_key': (
         '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcw'
         'ggSjAgEAAoIBAQDDQqzfNONHr3p5\na9240CfhTqTElD6ZEgjrAtKVr/b+EY+RmBJEAon'
-        'FhIBW3Jc1/z+7+VNvHwVqjGIG\nPOU5prg7o0EHHQADH+XVM42jSMt1lsBA+jfuF+retkOs'
+        'FHIBW3Jc1/z+7+VNvHwVqjGIG\nPOU5prg7o0EHHQADH+XVM42jSMt1lsBA+jfuF+retkOs'
         'LGZDxFq1bNWuWXMnAdkI\nUf9C7D9z8FSZd/slY2TBIObjztUtJHbLFeD69vamXVyN88Xk'
         'FBNNGXBpyQFvytfb\nsIBS9R39DxpkmmZ0C/tfA20fAB47kGOo50Jdx+jlgJs7xrKev4O'
         'D2Bs0zeMM69c6\nuGFhFLsReQtek+CrDvQes6evP2QWN4eOPKVzMFSxKy5sCMy7v0zDb2'
