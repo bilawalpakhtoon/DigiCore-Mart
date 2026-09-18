@@ -72,7 +72,7 @@ def send_order_confirmation_button(phone_number: str, customer_name: str, order_
         "to": phone_number,
         "type": "template",
         "template": {
-            "name": "confirmation",  # Meta template ka exact naam
+            "name": "confirmation", 
             "language": {"code": "en"},
             "components": [
                 {
@@ -251,30 +251,78 @@ def send_guidance_message(phone_number: str):
     except Exception as e:
         print(f"[ERROR] Failed to send guidance text: {e}")
 
-# --- 6. MANUAL BROWSER TEST ROUTE ---
-@app.route('/test-manual-order', methods=['GET'])
-def test_manual_order():
-    raw_phone = request.args.get('phone') or '923276878958'
-    phone_number = format_phone_number(raw_phone)
-    
-    customer_name = request.args.get('name', 'Muhammad Bilawal')
+# --- 6. SMART TEST ROUTES FOR ALL TEMPLATES ---
+@app.route('/test-confirmation', methods=['GET'])
+def test_confirmation():
+    phone = format_phone_number(request.args.get('phone', '923276878958'))
+    name = request.args.get('name', 'Bilawal')
     order_id = request.args.get('order_id', 'Z-1001')
-    total_amount = request.args.get('total', '2999')
+    total = request.args.get('total', '2999')
     
-    if not phone_number:
+    if not phone:
         return jsonify({"status": "error", "message": "Phone number is invalid or missing."}), 400
         
     try:
-        send_order_confirmation_button(phone_number, customer_name, order_id, total_amount)
-        update_google_sheet(phone_number, order_id, "Pending Test")
-        
-        return jsonify({
-            "status": "success",
-            "message": f"Manual test order triggered successfully for {phone_number}",
-            "order_id": order_id
-        }), 200
+        send_order_confirmation_button(phone, name, order_id, total)
+        update_google_sheet(phone, order_id, "Pending Test")
+        return jsonify({"status": "success", "message": "Confirmation template test sent!", "order_id": order_id}), 200
     except Exception as e:
-        print(f"[TEST ROUTE ERROR] {e}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route('/test-confirm-reply', methods=['GET'])
+def test_confirm_reply():
+    phone = format_phone_number(request.args.get('phone', '923276878958'))
+    name = request.args.get('name', 'Bilawal')
+    order_id = request.args.get('order_id', 'Z-1001')
+    
+    try:
+        send_success_reply_template(phone, name, order_id)
+        update_google_sheet(phone, order_id, "Confirmed")
+        return jsonify({"status": "success", "message": "Confirm reply template test sent!", "order_id": order_id}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route('/test-cancel-reply', methods=['GET'])
+def test_cancel_reply():
+    phone = format_phone_number(request.args.get('phone', '923276878958'))
+    name = request.args.get('name', 'Bilawal')
+    order_id = request.args.get('order_id', 'Z-1001')
+    
+    try:
+        send_cancel_reply_template(phone, name, order_id)
+        update_google_sheet(phone, order_id, "Cancelled")
+        return jsonify({"status": "success", "message": "Cancel reply template test sent!", "order_id": order_id}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route('/test-dispatch', methods=['GET'])
+def test_dispatch():
+    phone = format_phone_number(request.args.get('phone', '923276878958'))
+    name = request.args.get('name', 'Bilawal')
+    order_id = request.args.get('order_id', 'Z-1001')
+    amount = request.args.get('amount', '2999')
+    tracking = request.args.get('tracking', 'TCS-998877')
+    courier = request.args.get('courier', 'TCS Courier')
+    tracking_url = request.args.get('url', 'https://tcs.com.pk')
+    
+    try:
+        send_order_dispatch_template(phone, name, order_id, amount, tracking, courier, tracking_url)
+        update_google_sheet(phone, order_id, "Dispatched")
+        return jsonify({"status": "success", "message": "Dispatch template test sent!", "order_id": order_id}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route('/test-feedback', methods=['GET'])
+def test_feedback():
+    phone = format_phone_number(request.args.get('phone', '923276878958'))
+    name = request.args.get('name', 'Bilawal')
+    order_id = request.args.get('order_id', 'Z-1001')
+    
+    try:
+        send_delivery_feedback_template(phone, name, order_id)
+        update_google_sheet(phone, order_id, "Delivered")
+        return jsonify({"status": "success", "message": "Feedback template test sent!", "order_id": order_id}), 200
+    except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
 # --- 7. SHOPIFY WEBHOOK ROUTE ---
@@ -306,7 +354,7 @@ def handle_shopify_order():
         
     return jsonify({"status": "received"}), 200
 
-# --- 8. META WEBHOOK ROUTE (Fixed with text/plain Response) ---
+# --- 8. META WEBHOOK ROUTE ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def whatsapp_webhook():
     if request.method == 'GET':
@@ -319,7 +367,6 @@ def whatsapp_webhook():
         if mode and token:
             if mode == "subscribe" and token == VERIFY_TOKEN:
                 print("[VERIFY SUCCESS] Tokens matched perfectly!")
-                # Meta requires text/plain mimetype for challenge response
                 return Response(challenge, status=200, mimetype='text/plain')
             else:
                 print(f"[VERIFY FAILED] Expected '{VERIFY_TOKEN}', got '{token}'")
