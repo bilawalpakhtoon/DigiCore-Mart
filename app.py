@@ -1,9 +1,11 @@
 from datetime import datetime
+import json
 import os
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import requests
 
 # 'client.env' file se variables load karna
 load_dotenv('client.env')
@@ -20,14 +22,56 @@ ACCESS_TOKEN = os.getenv('ACCESS_TOKEN', '')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN', '3feb2020@')
 EXCEL_FILE_NAME = os.getenv('EXCEL_FILE_NAME', 'corecart_orders.xlsx')
 
-# --- GOOGLE SHEETS SETUP VIA GSPREAD ---
+# --- GOOGLE SHEETS SETUP VIA DIRECT DICTIONARY (NO credentials.json NEEDED) ---
 scope = [
     'https://spreadsheets.google.com/feeds',
     'https://www.googleapis.com/auth/drive',
 ]
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    'credentials.json', scope
-)
+
+creds_dict = {
+    'type': 'service_account',
+    'project_id': 'digicore-mart',
+    'private_key_id': 'a5c74de202f711ecc86bea29bc9511af7501a300',
+    'private_key': (
+        '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcw'
+        'ggSjAgEAAoIBAQDDQqzfNONHr3p5\na9240CfhTqTElD6ZEgjrAtKVr/b+EY+RmBJEAon'
+        'FhIBW3Jc1/z+7+VNvHwVqjGIG\nPOU5prg7o0EHHQADH+XVM42jSMt1lsBA+jfuF+retkOs'
+        'LGZDxFq1bNWuWXMnAdkI\nUf9C7D9z8FSZd/slY2TBIObjztUtJHbLFeD69vamXVyN88Xk'
+        'FBNNGXBpyQFvytfb\nsIBS9R39DxpkmmZ0C/tfA20fAB47kGOo50Jdx+jlgJs7xrKev4O'
+        'D2Bs0zeMM69c6\nuGFhFLsReQtek+CrDvQes6evP2QWN4eOPKVzMFSxKy5sCMy7v0zDb2'
+        '2MwAxTUtZG\ndUgq5/tlAgMBAAECggEAI2dDtm3dtsn1pC3fZArT7Elo3R6+8dygAtJ+c'
+        'bcXys3O\n0Ph4eV3Xcpl5dqZlAVygRvooO1ntzrmY7WYdrtQQi/moCPzkW2ytbLh9+ij'
+        'xAQde\nIPntaa1q/8oe34kmWquvwbzzynq8AwrV+ej6Jj11LNWa1T+4qPkKU+0eCBigtO'
+        'Aa\nUhHRwMJGoEshDS28tQygiWgOA8fotWHKWuMG9aIDD/5NZ0lbV6Nky1qvh3aVbw0R\n'
+        'oDlNEioJV0PcCZ5sXiUpA/n7B1gWj01MAbY8+wvGpJprmCdl3OPAdvGnvJx4C9qv\nR1SY'
+        '2f9eIw5EwaXGMOM3ngCFejQ3rs9a75ByfZTi4QKBgQDllzpze/urOmFhEyFW\nrxl2Da'
+        'ICdXjJx2SKVEFxaFuhpo3wCb3HTHZxpTljEEP7pD0tds+Gkjg1BgazHNdL\n4rI9bavMF'
+        '+lPSvuSFm4YHc9cJwDkDYl16fejL6HP0e7inMYDRvWmApWIQIsOBs7M\nGRR8A7t4ryMW'
+        'QjDaY0obTy/KRQKBgQDZuIVkDuIO+UTG49jtS/3I473eZ+tRLPQW\npy/ECvFem3giqtD'
+        'ub6CEGlPbktK3HIUOEGDQjww7NG908q35FJMqTYpzOV8OUqQL\n9tf0TG1Ntzs6jxpvO'
+        'qvWS/gyYAx+bgPL5oxWjkKrryczHQm0ZinSVT25cWOMoBuK\n3AChX0IOoQKBgD5eLX+'
+        'vn3ctPcTMGJNer5D1NRxr4usVYkd9ieWPzsyD3SzmyIn6\nSHaoxoUVpxIV1JSkIM3SrL'
+        'gisfE4FXhE1dyADVo86KEkomBV/YRJnMnQwpow3zWL\n4DyRNOiqg7VFlzjOru5w50QDH'
+        'IMr8ENbUMg7j1LCaMqkIndA36G5iibtAoGBAKsx\n2FFREpfLkTUCu/P7KNbpnMZg2DvA'
+        'KT4WwAxavmgxv0kjH54c0A6P1Rh2XpH1Lvpc\nDoRvtqJnHKzMldehQgalahQoLIJKoQt3'
+        'UV+bKOdPCJeHJrYHYE7k9YhG1gwj3YBb\nDEaTHgF5fE1Iq/TZ0FC/DgXfDvPogT+ythw'
+        'tlveBAoGAUlmixb23NH+7naAeMKI/\nQ1fNrFDboc43AEVS9M3iDbcNbJ8MaBU3bOMHFl'
+        'JgbnaP5oGBN/yVfMxH8/ppJTOm\ncpyaWlvezz+JAWde5K4F9Y8ERSFzqx0kY87+UKkdkD'
+        'lg8Ar4RuGP7pEAasLtAQLB\ngxcDzvlvqjedObjzUoUJtgY=\n-----END PRIVATE KEY-----'
+    ),
+    'client_email': 'digicore-mart@digicore-mart.iam.gserviceaccount.com',
+    'client_id': '109506419002560793289',
+    'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+    'token_uri': 'https://oauth2.googleapis.com/token',
+    'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
+    'client_x509_cert_url': (
+        'https://www.googleapis.com/robot/v1/metadata/x509/digicore-mart%40'
+        'digicore-mart.iam.gserviceaccount.com'
+    ),
+    'universe_domain': 'googleapis.com',
+}
+
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
 SPREADSHEET_NAME = 'CoreCart_Orders'
