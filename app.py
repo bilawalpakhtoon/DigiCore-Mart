@@ -1,7 +1,7 @@
 import os
 import requests
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from dotenv import load_dotenv
 
 # 'client.env' file se variables load karna
@@ -14,7 +14,6 @@ WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://graph.facebook.com/v25
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID", "")
 WABA_ID = os.getenv("WABA_ID", "")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN", "")
-# Yahan humne fallback token bhi de diya hai taake agar .env mein na ho toh error na aaye
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "ahmadnadeem804")
 EXCEL_FILE_NAME = os.getenv("EXCEL_FILE_NAME", "CoreCart_Orders.xlsx")
 GOOGLE_SHEET_WEB_APP_URL = os.getenv("GOOGLE_SHEET_WEB_APP_URL", "")
@@ -307,7 +306,7 @@ def handle_shopify_order():
         
     return jsonify({"status": "received"}), 200
 
-# --- 8. META WEBHOOK ROUTE (Updated & Secured) ---
+# --- 8. META WEBHOOK ROUTE (Fixed with text/plain Response) ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def whatsapp_webhook():
     if request.method == 'GET':
@@ -320,7 +319,8 @@ def whatsapp_webhook():
         if mode and token:
             if mode == "subscribe" and token == VERIFY_TOKEN:
                 print("[VERIFY SUCCESS] Tokens matched perfectly!")
-                return challenge, 200
+                # Meta requires text/plain mimetype for challenge response
+                return Response(challenge, status=200, mimetype='text/plain')
             else:
                 print(f"[VERIFY FAILED] Expected '{VERIFY_TOKEN}', got '{token}'")
                 return "Verification failed: Token mismatch", 403
