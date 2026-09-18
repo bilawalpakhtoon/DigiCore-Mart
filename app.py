@@ -40,40 +40,42 @@ scope = [
     'https://www.googleapis.com/auth/drive',
 ]
 
+# Private key ko robust banane ke liye .replace('\\n', '\n') add kar diya hai
+raw_private_key = (
+    '-----BEGIN PRIVATE KEY-----\n'
+    'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDDQqzfNONHr3p5\n'
+    'a9240CfhTqTElD6ZEgjrAtKVr/b+EY+RmBJEAonFHIBW3Jc1/z+7+VNvHwVqjGIG\n'
+    'POU5prg7o0EHHQADH+XVM42jSMt1lsBA+jfuF+retkOsLGZDxFq1bNWuWXMnAdkI\n'
+    'Uf9C7D9z8FSZd/slY2TBIObjztUtJHbLFeD69vamXVyN88XkFBNNGXBpyQFvytfb\n'
+    'sIBS9R39DxpkmmZ0C/tfA20fAB47kGOo50Jdx+jlgJs7xrKev4OD2Bs0zeMM69c6\n'
+    'uGFhFLsReQtek+CrDvQes6evP2QWN4eOPKVzMFSxKy5sCMy7v0zDb22MwAxTUtZG\n'
+    'dUgq5/tlAgMBAAECggEAI2dDtm3dtsn1pC3fZArT7Elo3R6+8dygAtJ+cbcXys3O\n'
+    '0Ph4eV3Xcpl5dqZlAVygRvooO1ntzrmY7WYdrtQQi/moCPzkW2ytbLh9+ijxAQde\n'
+    'IPntaa1q/8oe34kmWquvwbzzynq8AwrV+ej6Jj11LNWa1T+4qPkKU+0eCBigtOAa\n'
+    'UhHRwMJGoEshDS28tQygiWgOA8fotWHKWuMG9aIDD/5NZ0lbV6Nky1qvh3aVbw0R\n'
+    'oDlNEioJV0PcCZ5sXiUpA/n7B1gWj01MAbY8+wvGpJprmCdl3OPAdvGnvJx4C9qv\n'
+    'R1SY2f9eIw5EwaXGMOM3ngCFejQ3rs9a75ByfZTi4QKBgQDllzpze/urOmFhEyFW\n'
+    'rxl2DaICdXjJx2SKVEFxaFuhpo3wCb3HTHZxpTljEEP7pD0tds+Gkjg1BgazHNdL\n'
+    '4rI9bavMF+lPSvuSFm4YHc9cJwDkDYl16fejL6HP0e7inMYDRvWmApWIQIsOBs7M\n'
+    'GRR8A7t4ryMWQjDaY0obTy/KRQKBgQDZuIVkDuIO+UTG49jtS/3I473eZ+tRLPQW\n'
+    'py/ECvFem3giqtDub6CEGlPbktK3HIUOEGDQjww7NG908q35FJMqTYpzOV8OUqQL\n'
+    '9tf0TG1Ntzs6jxpvOqvWS/gyYAx+bgPL5oxWjkKrryczHQm0ZinSVT25cWOMoBuK\n'
+    '3AChX0IOoQKBgD5eLX+vn3ctPcTMGJNer5D1NRxr4usVYkd9ieWPzsyD3SzmyIn6\n'
+    'SHaoxoUVpxIV1JSkIM3SrLgisfE4FXhE1dyADVo86KEkomBV/YRJnMnQwpow3zWL\n'
+    '4DyRNOiqg7VFlzjOru5w50QDHIMr8ENbUMg7j1LCaMqkIndA36G5iibtAoGBAKsx\n'
+    '2FFREpfLkTUCu/P7KNbpnMZg2DvAKT4WwAxavmgxv0kjH54c0A6P1Rh2XpH1Lvpc\n'
+    'DoRvtqJnHKzMldehQgalahQoLIJKoQt3UV+bKOdPCJeHJrYHYE7k9YhG1gwj3YBb\n'
+    'DEaTHgF5fE1Iq/TZ0FC/DgXfDvPogT+ythwtlveBAoGAUlmixb23NH+7naAeMKI/\n'
+    'Q1fNrFDboc43AEVS9M3iDbcNbJ8MaBU3bOMHFlJgbnaP5oGBN/yVfMxH8/ppJTOm\n'
+    'cpyaWlvezz+JAWde5K4F9Y8ERSFzqx0kY87+UKkdkDlg8Ar4RuGP7pEAasLtAQLB\n'
+    'gxcDzvlvqjedObjzUoUJtgY='
+).replace('\\n', '\n')
+
 creds_dict = {
     'type': 'service_account',
     'project_id': 'digicore-mart',
     'private_key_id': 'a5c74de202f711ecc86bea29bc9511af7501a300',
-    'private_key': (
-        '-----BEGIN PRIVATE KEY-----\n'
-        'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDDQqzfNONHr3p5\n'
-        'a9240CfhTqTElD6ZEgjrAtKVr/b+EY+RmBJEAonFHIBW3Jc1/z+7+VNvHwVqjGIG\n'
-        'POU5prg7o0EHHQADH+XVM42jSMt1lsBA+jfuF+retkOsLGZDxFq1bNWuWXMnAdkI\n'
-        'Uf9C7D9z8FSZd/slY2TBIObjztUtJHbLFeD69vamXVyN88XkFBNNGXBpyQFvytfb\n'
-        'sIBS9R39DxpkmmZ0C/tfA20fAB47kGOo50Jdx+jlgJs7xrKev4OD2Bs0zeMM69c6\n'
-        'uGFhFLsReQtek+CrDvQes6evP2QWN4eOPKVzMFSxKy5sCMy7v0zDb22MwAxTUtZG\n'
-        'dUgq5/tlAgMBAAECggEAI2dDtm3dtsn1pC3fZArT7Elo3R6+8dygAtJ+cbcXys3O\n'
-        '0Ph4eV3Xcpl5dqZlAVygRvooO1ntzrmY7WYdrtQQi/moCPzkW2ytbLh9+ijxAQde\n'
-        'IPntaa1q/8oe34kmWquvwbzzynq8AwrV+ej6Jj11LNWa1T+4qPkKU+0eCBigtOAa\n'
-        'UhHRwMJGoEshDS28tQygiWgOA8fotWHKWuMG9aIDD/5NZ0lbV6Nky1qvh3aVbw0R\n'
-        'oDlNEioJV0PcCZ5sXiUpA/n7B1gWj01MAbY8+wvGpJprmCdl3OPAdvGnvJx4C9qv\n'
-        'R1SY2f9eIw5EwaXGMOM3ngCFejQ3rs9a75ByfZTi4QKBgQDllzpze/urOmFhEyFW\n'
-        'rxl2DaICdXjJx2SKVEFxaFuhpo3wCb3HTHZxpTljEEP7pD0tds+Gkjg1BgazHNdL\n'
-        '4rI9bavMF+lPSvuSFm4YHc9cJwDkDYl16fejL6HP0e7inMYDRvWmApWIQIsOBs7M\n'
-        'GRR8A7t4ryMWQjDaY0obTy/KRQKBgQDZuIVkDuIO+UTG49jtS/3I473eZ+tRLPQW\n'
-        'py/ECvFem3giqtDub6CEGlPbktK3HIUOEGDQjww7NG908q35FJMqTYpzOV8OUqQL\n'
-        '9tf0TG1Ntzs6jxpvOqvWS/gyYAx+bgPL5oxWjkKrryczHQm0ZinSVT25cWOMoBuK\n'
-        '3AChX0IOoQKBgD5eLX+vn3ctPcTMGJNer5D1NRxr4usVYkd9ieWPzsyD3SzmyIn6\n'
-        'SHaoxoUVpxIV1JSkIM3SrLgisfE4FXhE1dyADVo86KEkomBV/YRJnMnQwpow3zWL\n'
-        '4DyRNOiqg7VFlzjOru5w50QDHIMr8ENbUMg7j1LCaMqkIndA36G5iibtAoGBAKsx\n'
-        '2FFREpfLkTUCu/P7KNbpnMZg2DvAKT4WwAxavmgxv0kjH54c0A6P1Rh2XpH1Lvpc\n'
-        'DoRvtqJnHKzMldehQgalahQoLIJKoQt3UV+bKOdPCJeHJrYHYE7k9YhG1gwj3YBb\n'
-        'DEaTHgF5fE1Iq/TZ0FC/DgXfDvPogT+ythwtlveBAoGAUlmixb23NH+7naAeMKI/\n'
-        'Q1fNrFDboc43AEVS9M3iDbcNbJ8MaBU3bOMHFlJgbnaP5oGBN/yVfMxH8/ppJTOm\n'
-        'cpyaWlvezz+JAWde5K4F9Y8ERSFzqx0kY87+UKkdkDlg8Ar4RuGP7pEAasLtAQLB\n'
-        'gxcDzvlvqjedObjzUoUJtgY=\n'
-        '-----END PRIVATE KEY-----'
-    ),
+    'private_key': raw_private_key,
     'client_email': 'digicore-mart@digicore-mart.iam.gserviceaccount.com',
     'client_id': '109506419002560793289',
     'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
