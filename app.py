@@ -24,8 +24,7 @@ WHATSAPP_API_URL = 'https://graph.facebook.com/v25.0'
 PHONE_NUMBER_ID = '1247446061793133'
 WABA_ID = '1721301722295525'
 ACCESS_TOKEN = 'EAAPODuoaelgBSh5mPSTRFFqPZCmZB5wTzbgzwMtVLNJNTE0SelPSIqlZA9aVd4jrqMXlyZBO79dghZCM7ZBm1yELNQkvdZBZBaF8Q9yLOlZBlJgsuffoQZA2wTJ6afmYmKeHwPrrUVIqoKYgxlkKxuepvL2LiLvZAb7ZC7qUpVWT0OiM6YZAdv3OTxwJ7TrZCN8HqBi4le4gZDZD'
-VERIFY_TOKEN = '3feb2020@@'
-EXCEL_FILE_NAME = 'CoreCart_Orders.xlsx'
+VERIFY_TOKEN = 'bilawalpakhtoon530'
 WEBHOOK_URL = 'https://corecart-bot-d71de.containers.snapdeploy.app/webhook'
 
 # --- GOOGLE SHEETS SETUP VIA GOOGLE-AUTH & ENVIRONMENT JSON ---
@@ -34,21 +33,20 @@ scope = [
     'https://www.googleapis.com/auth/drive',
 ]
 
+sheet_obj = None
 try:
     creds_json_str = os.getenv('GOOGLE_CREDENTIALS_JSON')
-    if not creds_json_str:
-        raise ValueError(
-            'GOOGLE_CREDENTIALS_JSON environment variable is missing!'
-        )
-    creds_dict = json.loads(creds_json_str)
-    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-    client = gspread.authorize(creds)
-    SPREADSHEET_NAME = 'CoreCart_Orders'
-    sheet_obj = client.open(SPREADSHEET_NAME)
-    print('[GOOGLE SHEETS] Successfully connected to spreadsheet!')
+    if creds_json_str:
+        creds_dict = json.loads(creds_json_str)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        client = gspread.authorize(creds)
+        SPREADSHEET_NAME = 'CoreCart_Orders'
+        sheet_obj = client.open(SPREADSHEET_NAME)
+        print('[GOOGLE SHEETS] Successfully connected to spreadsheet!')
+    else:
+        print('[GOOGLE SHEETS WARNING] GOOGLE_CREDENTIALS_JSON environment variable is missing!')
 except Exception as e:
     print(f'[GOOGLE SHEETS INITIALIZATION ERROR]: {e}')
-    sheet_obj = None
 
 
 # --- 1. AUTOMATIC PHONE NUMBER FORMATTING (E.164 Standard) ---
@@ -128,9 +126,9 @@ def send_order_confirmation_button(
             'components': [{
                 'type': 'body',
                 'parameters': [
-                    {'type': 'text', 'text': customer_name},
-                    {'type': 'text', 'text': order_id},
-                    {'type': 'text', 'text': total_amount},
+                    {'type': 'text', 'text': str(customer_name)},
+                    {'type': 'text', 'text': str(order_id)},
+                    {'type': 'text', 'text': str(total_amount)},
                 ],
             }],
         },
@@ -164,8 +162,8 @@ def send_success_reply_template(
             'components': [{
                 'type': 'body',
                 'parameters': [
-                    {'type': 'text', 'text': customer_name},
-                    {'type': 'text', 'text': order_id},
+                    {'type': 'text', 'text': str(customer_name)},
+                    {'type': 'text', 'text': str(order_id)},
                 ],
             }],
         },
@@ -197,8 +195,8 @@ def send_cancel_reply_template(
             'components': [{
                 'type': 'body',
                 'parameters': [
-                    {'type': 'text', 'text': customer_name},
-                    {'type': 'text', 'text': order_id},
+                    {'type': 'text', 'text': str(customer_name)},
+                    {'type': 'text', 'text': str(order_id)},
                 ],
             }],
         },
@@ -227,11 +225,11 @@ def send_order_dispatch_template(
     }
 
     body_parameters = [
-        {'type': 'text', 'text': customer_name},
-        {'type': 'text', 'text': order_id},
-        {'type': 'text', 'text': amount},
-        {'type': 'text', 'text': tracking_number},
-        {'type': 'text', 'text': courier_name},
+        {'type': 'text', 'text': str(customer_name)},
+        {'type': 'text', 'text': str(order_id)},
+        {'type': 'text', 'text': str(amount)},
+        {'type': 'text', 'text': str(tracking_number)},
+        {'type': 'text', 'text': str(courier_name)},
     ]
 
     payload = {
@@ -276,8 +274,8 @@ def send_delivery_feedback_template(
             'components': [{
                 'type': 'body',
                 'parameters': [
-                    {'type': 'text', 'text': customer_name},
-                    {'type': 'text', 'text': order_id},
+                    {'type': 'text', 'text': str(customer_name)},
+                    {'type': 'text', 'text': str(order_id)},
                 ],
             }],
         },
@@ -326,25 +324,12 @@ def test_confirmation():
     total = request.args.get('total', '2999')
 
     if not phone:
-        return (
-            jsonify({
-                'status': 'error',
-                'message': 'Phone number is invalid or missing.',
-            }),
-            400,
-        )
+        return jsonify({'status': 'error', 'message': 'Phone number is invalid or missing.'}), 400
 
     try:
         send_order_confirmation_button(phone, name, order_id, total)
         update_google_sheet(phone, order_id, 'Pending Test')
-        return (
-            jsonify({
-                'status': 'success',
-                'message': 'Confirmation template test sent!',
-                'order_id': order_id,
-            }),
-            200,
-        )
+        return jsonify({'status': 'success', 'message': 'Confirmation template test sent!', 'order_id': order_id}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
@@ -358,14 +343,7 @@ def test_confirm_reply():
     try:
         send_success_reply_template(phone, name, order_id)
         update_google_sheet(phone, order_id, 'Confirmed')
-        return (
-            jsonify({
-                'status': 'success',
-                'message': 'Confirm reply template test sent!',
-                'order_id': order_id,
-            }),
-            200,
-        )
+        return jsonify({'status': 'success', 'message': 'Confirm reply template test sent!', 'order_id': order_id}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
@@ -379,14 +357,7 @@ def test_cancel_reply():
     try:
         send_cancel_reply_template(phone, name, order_id)
         update_google_sheet(phone, order_id, 'Cancelled')
-        return (
-            jsonify({
-                'status': 'success',
-                'message': 'Cancel reply template test sent!',
-                'order_id': order_id,
-            }),
-            200,
-        )
+        return jsonify({'status': 'success', 'message': 'Cancel reply template test sent!', 'order_id': order_id}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
@@ -401,18 +372,9 @@ def test_dispatch():
     courier = request.args.get('courier', 'PostEx')
 
     try:
-        send_order_dispatch_template(
-            phone, name, order_id, amount, tracking, courier
-        )
+        send_order_dispatch_template(phone, name, order_id, amount, tracking, courier)
         update_google_sheet(phone, order_id, 'Dispatched')
-        return (
-            jsonify({
-                'status': 'success',
-                'message': 'Dispatch template test sent!',
-                'order_id': order_id,
-            }),
-            200,
-        )
+        return jsonify({'status': 'success', 'message': 'Dispatch template test sent!', 'order_id': order_id}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
@@ -426,14 +388,7 @@ def test_feedback():
     try:
         send_delivery_feedback_template(phone, name, order_id)
         update_google_sheet(phone, order_id, 'Delivered')
-        return (
-            jsonify({
-                'status': 'success',
-                'message': 'Feedback template test sent!',
-                'order_id': order_id,
-            }),
-            200,
-        )
+        return jsonify({'status': 'success', 'message': 'Feedback template test sent!', 'order_id': order_id}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
@@ -441,7 +396,7 @@ def test_feedback():
 # --- 7. SHOPIFY WEBHOOK ROUTE ---
 @app.route('/shopify-order', methods=['POST'])
 def handle_shopify_order():
-    order_data = request.get_json()
+    order_data = request.get_json(silent=True)
     if not order_data:
         return jsonify({'status': 'error', 'message': 'No JSON payload received'}), 400
 
@@ -459,14 +414,9 @@ def handle_shopify_order():
 
         if phone_number:
             if check_order_exists(order_id):
-                print(
-                    f'[DUPLICATE BLOCKED] Order {order_id} is already processed.'
-                    ' Skipping message.'
-                )
+                print(f'[DUPLICATE BLOCKED] Order {order_id} is already processed. Skipping message.')
             else:
-                send_order_confirmation_button(
-                    phone_number, customer_name, order_id, total_price
-                )
+                send_order_confirmation_button(phone_number, customer_name, order_id, total_price)
                 update_google_sheet(phone_number, order_id, 'Pending Shopify')
         else:
             print('[WARNING] Phone number missing in Shopify order payload.')
@@ -490,13 +440,13 @@ def whatsapp_webhook():
         if mode and token:
             if mode == 'subscribe' and token == VERIFY_TOKEN:
                 print('[VERIFY SUCCESS] Tokens matched perfectly!')
-                return Response(challenge, status=200, mimetype='text/plain')
+                return Response(str(challenge), status=200, mimetype='text/plain')
             else:
                 print(f"[VERIFY FAILED] Expected '{VERIFY_TOKEN}', got '{token}'")
                 return 'Verification failed: Token mismatch', 403
         return 'Verification failed: Missing parameters', 400
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
         return jsonify({'status': 'success'}), 200
 
