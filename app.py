@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 import requests
 
 # 'client.env' file se variables load karna
@@ -34,13 +34,12 @@ ACCESS_TOKEN = os.getenv('ACCESS_TOKEN', '')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN', '3feb2020@')
 EXCEL_FILE_NAME = os.getenv('EXCEL_FILE_NAME', 'corecart_orders.xlsx')
 
-# --- GOOGLE SHEETS SETUP VIA DIRECT DICTIONARY ---
+# --- GOOGLE SHEETS SETUP VIA GOOGLE-AUTH ---
 scope = [
     'https://spreadsheets.google.com/feeds',
     'https://www.googleapis.com/auth/drive',
 ]
 
-# Private key ko robust banane ke liye .replace('\\n', '\n') add kar diya hai
 raw_private_key = (
     '-----BEGIN PRIVATE KEY-----\n'
     'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDDQqzfNONHr3p5\n'
@@ -88,7 +87,7 @@ creds_dict = {
     'universe_domain': 'googleapis.com',
 }
 
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
 client = gspread.authorize(creds)
 
 SPREADSHEET_NAME = 'CoreCart_Orders'
@@ -584,4 +583,3 @@ def whatsapp_webhook():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
