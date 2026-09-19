@@ -1,17 +1,12 @@
 from datetime import datetime
 import json
 import os
-from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request
 import gspread
 from google.oauth2.service_account import Credentials
 import requests
 
-# 'client.env' file se variables load karna
-load_dotenv('client.env')
-
 app = Flask(__name__)
-
 
 # --- ROOT & PING ROUTES FOR CRON-JOB ---
 @app.route('/')
@@ -24,15 +19,14 @@ def ping():
     return 'Server is alive!', 200
 
 
-# --- CONFIGURATION FROM ENVIRONMENT VARIABLES ---
-WHATSAPP_API_URL = os.getenv(
-    'WHATSAPP_API_URL', 'https://graph.facebook.com/v25.0'
-)
-PHONE_NUMBER_ID = os.getenv('PHONE_NUMBER_ID', '')
-WABA_ID = os.getenv('WABA_ID', '')
-ACCESS_TOKEN = os.getenv('ACCESS_TOKEN', '')
-VERIFY_TOKEN = os.getenv('VERIFY_TOKEN', '3feb2020@')
-EXCEL_FILE_NAME = os.getenv('EXCEL_FILE_NAME', 'corecart_orders.xlsx')
+# --- FULLY HARDCODED CONFIGURATIONS ---
+WHATSAPP_API_URL = 'https://graph.facebook.com/v25.0'
+PHONE_NUMBER_ID = '1247446061793133'
+WABA_ID = '1721301722295525'
+ACCESS_TOKEN = 'EAAPODuoaelgBSh5mPSTRFFqPZCmZB5wTzbgzwMtVLNJNTE0SelPSIqlZA9aVd4jrqMXlyZBO79dghZCM7ZBm1yELNQkvdZBZBaF8Q9yLOlZBlJgsuffoQZA2wTJ6afmYmKeHwPrrUVIqoKYgxlkKxuepvL2LiLvZAb7ZC7qUpVWT0OiM6YZAdv3OTxwJ7TrZCN8HqBi4le4gZDZD'
+VERIFY_TOKEN = '3feb2020@@'
+EXCEL_FILE_NAME = 'CoreCart_Orders.xlsx'
+WEBHOOK_URL = 'https://corecart-bot-d71de.containers.snapdeploy.app/webhook'
 
 # --- GOOGLE SHEETS SETUP VIA GOOGLE-AUTH & ENVIRONMENT JSON ---
 scope = [
